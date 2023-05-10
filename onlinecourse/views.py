@@ -114,20 +114,26 @@ def submit(request, course_id):
     user = request.user
     course = get_object_or_404(Course, pk=course_id)
     enrollment = Enrollment.objects.get(user=user, course=course)
-    submission = Submission.objects.create(enrollment)
-    submission_id = 999
-    submission.choices = extract_answers(request=request)
+    submission = Submission.objects.create(enrollment=enrollment)
+    submission_id = 1
+    answers = extract_answers(request=request)
+    for answer in answers:
+        submission.choices.set(answer) 
     return redirect(show_exam_result(request=request, course_id=course_id, submission_id = submission_id))
 
 
 # <HINT> A example method to collect the selected choices from the exam form from the request object
 def extract_answers(request):
     submitted_answers = []
+    print("start")
     for key in request.POST:
+        print(key)
         if key.startswith('choice'):
             value = request.POST[key]
             choice_id = int(value)
+            print(choice_id)
             submitted_answers.append(choice_id)
+    print("end")
     return submitted_answers
 
 
