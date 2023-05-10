@@ -115,10 +115,9 @@ def submit(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
     enrollment = Enrollment.objects.get(user=user, course=course)
     submission = Submission.objects.create(enrollment=enrollment)
-    submission_id = 1
+    submission_id = 0
     answers = extract_answers(request=request)
-    for answer in answers:
-        submission.choices.set(answer) 
+    submission.choices.set(answers) 
     return redirect(show_exam_result(request=request, course_id=course_id, submission_id = submission_id))
 
 
@@ -127,7 +126,6 @@ def extract_answers(request):
     submitted_answers = []
     print("start")
     for key in request.POST:
-        print(key)
         if key.startswith('choice'):
             value = request.POST[key]
             choice_id = int(value)
@@ -148,7 +146,10 @@ def show_exam_result(request, course_id, submission_id):
     course = get_object_or_404(Course, pk=course_id)
     submission = get_object_or_404(Submission, pk=submission_id)
     score = 0
+    print("here!")
     for choice in submission.choices:
+        print("here!")
+        print(choice)
         if choice.correct:
             score = score + 1
     render(request, 'onlinecourse/exam_result_bootstrap.html', context)
