@@ -115,9 +115,16 @@ def submit(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
     enrollment = Enrollment.objects.get(user=user, course=course)
     submission = Submission.objects.create(enrollment=enrollment)
-    submission_id = 0
+    submission_id = 1
     answers = extract_answers(request=request)
-    submission.choices.set(answers) 
+    print("start_0")
+    for answer in answers:
+        choice = get_object_or_404(Choice, pk=answer)
+        print(choice.content)
+        submission.choices.add(choice)
+        print(submission.choices.all())
+        print(answer)
+    print("end_0")
     return redirect(show_exam_result(request=request, course_id=course_id, submission_id = submission_id))
 
 
@@ -126,10 +133,12 @@ def extract_answers(request):
     submitted_answers = []
     print("start")
     for key in request.POST:
+        print(key)
         if key.startswith('choice'):
             value = request.POST[key]
             choice_id = int(value)
             print(choice_id)
+            # print(len(request.POST[key]))
             submitted_answers.append(choice_id)
     print("end")
     return submitted_answers
