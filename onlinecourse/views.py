@@ -120,14 +120,13 @@ def submit(request, course_id):
         choice = get_object_or_404(Choice, pk=answer)
         submission.choices.add(choice)
         submission.save()
-    return redirect(show_exam_result(request=request, course_id=course_id, submission_id = submission.id))
+    return show_exam_result(request=request, course_id=course_id, submission_id = submission.id)
 
 
 # <HINT> A example method to collect the selected choices from the exam form from the request object
 def extract_answers(request):
     submitted_answers = []
     for key in request.POST:
-        print(key)
         if key.startswith('choice'):
             value = request.POST[key]
             choice_id = int(value)
@@ -157,18 +156,13 @@ def show_exam_result(request, course_id, submission_id):
         
         n_overall_choices = n_overall_choices + n_choices_per_question
         n_overall_correct_choices = n_overall_correct_choices + n_correct_choises_per_question
-        
-        print("NUMBER1: " + str(n_overall_choices))
-        print("NUMBER2: " + str(n_overall_correct_choices))
 
-    # print("NUMBER: " + str(n_all_choices))
     selected_overall = len(submission.choices.all())
     selected_correct = 0
     selected_ids = []
     for choice in submission.choices.all():
         if choice.correct:
             selected_correct = selected_correct + 1
-            print("SCORE:" + str(selected_correct))
         selected_ids.append(choice.id)
     
     n_overall_incorrect = selected_overall - selected_correct + (n_overall_correct_choices - selected_correct)
@@ -176,11 +170,10 @@ def show_exam_result(request, course_id, submission_id):
 
     score_in_percent = n_overall_selected_correct/n_overall_choices*100
     print("FINAL_SCORE: " + str(score_in_percent))
-    print("COURSE NAME: " + course.name)
 
     context["course"] = course
     context["selected_ids"] = selected_ids
-    context["grade"] = score_in_percent
+    context["grade"] = int(score_in_percent)
     return render(request, 'onlinecourse/exam_result_bootstrap.html', context)
     
 
