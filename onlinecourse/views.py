@@ -115,32 +115,23 @@ def submit(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
     enrollment = Enrollment.objects.get(user=user, course=course)
     submission = Submission.objects.create(enrollment=enrollment)
-    submission_id = 1
     answers = extract_answers(request=request)
-    print("start_0")
     for answer in answers:
         choice = get_object_or_404(Choice, pk=answer)
-        print(choice.content)
         submission.choices.add(choice)
-        print(submission.choices.all())
-        print(answer)
-    print("end_0")
-    return redirect(show_exam_result(request=request, course_id=course_id, submission_id = submission_id))
+        submission.save()
+    return redirect(show_exam_result(request=request, course_id=course_id, submission_id = submission.id))
 
 
 # <HINT> A example method to collect the selected choices from the exam form from the request object
 def extract_answers(request):
     submitted_answers = []
-    print("start")
     for key in request.POST:
         print(key)
         if key.startswith('choice'):
             value = request.POST[key]
             choice_id = int(value)
-            print(choice_id)
-            # print(len(request.POST[key]))
             submitted_answers.append(choice_id)
-    print("end")
     return submitted_answers
 
 
@@ -154,13 +145,42 @@ def show_exam_result(request, course_id, submission_id):
     context = {}
     course = get_object_or_404(Course, pk=course_id)
     submission = get_object_or_404(Submission, pk=submission_id)
-    score = 0
-    print("here!")
-    for choice in submission.choices:
-        print("here!")
-        print(choice)
+    questions = course.question_set.all()
+    n_overall_choices = 0
+    n_overall_correct_choices = 0
+    for question in questions:
+        choices_per_question = question.choice_set.all()
+        correct_choices_per_question = question.choice_set.filter(correct=True)
+       
+        n_choices_per_question = len(choices_per_question)
+        n_correct_choises_per_question = len(correct_choices_per_question)
+        
+        n_overall_choices = n_overall_choices + n_choices_per_question
+        n_overall_correct_choices = n_overall_correct_choices + n_correct_choises_per_question
+        
+        print("NUMBER1: " + str(n_overall_choices))
+        print("NUMBER2: " + str(n_overall_correct_choices))
+
+    # print("NUMBER: " + str(n_all_choices))
+    selected_overall = len(submission.choices.all())
+    selected_correct = 0
+    selected_ids = []
+    for choice in submission.choices.all():
         if choice.correct:
-            score = score + 1
-    render(request, 'onlinecourse/exam_result_bootstrap.html', context)
+            selected_correct = selected_correct + 1
+            print("SCORE:" + str(selected_correct))
+        selected_ids.append(choice.id)
+    
+    n_overall_incorrect = selected_overall - selected_correct + (n_overall_correct_choices - selected_correct)
+    n_overall_selected_correct = n_overall_choices - n_overall_incorrect
+
+    score_in_percent = n_overall_selected_correct/n_overall_choices*100
+    print("FINAL_SCORE: " + str(score_in_percent))
+    print("COURSE NAME: " + course.name)
+
+    context["course"] = course
+    context["selected_ids"] = selected_ids
+    context["grade"] = score_in_percent
+    return render(request, 'onlinecourse/exam_result_bootstrap.html', context)
     
 
